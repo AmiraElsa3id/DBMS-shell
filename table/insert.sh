@@ -20,17 +20,16 @@ insert_into_table() {
     meta_file="$DB_ROOT/$db_name/${table_name}.meta"
     data_file="$DB_ROOT/$db_name/${table_name}.data"
     
-    # Read primary key
-    pk_column=$(head -n 1 "$meta_file" | cut -d: -f2)
-    
     # Read column names and types
     col_names=()
     col_types=()
     
     while IFS=: read -r col_name col_type; do
-        if [[ "$col_name" != "PK" ]]; then
+        if [[ "$col_name" != "PK" ]] && [[ "$col_name" != "VERSION" ]]; then
             col_names+=("$col_name")
             col_types+=("$col_type")
+        elif [[ "$col_name" == "PK" ]]; then
+            pk_column="$col_type"
         fi
     done < "$meta_file"
     
@@ -50,8 +49,8 @@ insert_into_table() {
                     pk_value="$value"
                     pk_index=$i
                     
-                    if [[ -f "$data_file" ]] && grep -q "^[^${FIELD_SEPARATOR}]*${FIELD_SEPARATOR}.*${value}" "$data_file" 2>/dev/null; then
-                        # More precise check
+                    if [[ -f "$data_file" ]]; then
+                        # More precise check for duplicate primary key
                         duplicate=false
                         while IFS="$FIELD_SEPARATOR" read -r -a row; do
                             if [[ "${row[$pk_index]}" == "$value" ]]; then
