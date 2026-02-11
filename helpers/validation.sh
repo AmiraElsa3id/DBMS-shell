@@ -56,6 +56,25 @@ validate_value() {
             # Check for field separator in string
             [[ "$value" != *"$FIELD_SEPARATOR"* ]] && return 0 || return 1
             ;;
+        boolean)
+            [[ "$value" =~ ^(true|false|0|1|yes|no|TRUE|FALSE|YES|NO)$ ]] && return 0 || return 1
+            ;;
+        date)
+            # Validate date format (YYYY-MM-DD)
+            [[ "$value" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] && return 0 || return 1
+            ;;
+        email)
+            # Basic email validation
+            [[ "$value" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]] && return 0 || return 1
+            ;;
+        url)
+            # Basic URL validation
+            [[ "$value" =~ ^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(/.*)?$ ]] && return 0 || return 1
+            ;;
+        phone)
+            # Phone number validation (supports various formats)
+            [[ "$value" =~ ^[+]?[0-9]{10,15}$ ]] || [[ "$value" =~ ^[0-9]{3}-[0-9]{3}-[0-9]{4}$ ]] || [[ "$value" =~ ^\([0-9]{3}\)[0-9]{3}-[0-9]{4}$ ]] && return 0 || return 1
+            ;;
         *)
             return 1
             ;;

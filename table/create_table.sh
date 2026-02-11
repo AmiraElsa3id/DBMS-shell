@@ -94,8 +94,7 @@ create_table() {
     
     # Create metadata file
     meta_file="$DB_ROOT/$db_name/${table_name}.meta"
-    echo "VERSION:1.0" > "$meta_file"
-    echo "PK:$pk_column" >> "$meta_file"
+    echo "PK:$pk_column" > "$meta_file"
     
     for ((i=0; i<${#col_names[@]}; i++)); do
         echo "${col_names[$i]}:${col_types[$i]}" >> "$meta_file"

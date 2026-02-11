@@ -11,7 +11,7 @@ insert_into_table() {
     
     # Check if table exists
     if ! table_exists "$db_name" "$table_name"; then
-        echo "Error: Table '$table_name' does not exist."
+        print_error "Error: Table '$table_name' does not exist."
         pause
         return
     fi
@@ -20,16 +20,17 @@ insert_into_table() {
     meta_file="$DB_ROOT/$db_name/${table_name}.meta"
     data_file="$DB_ROOT/$db_name/${table_name}.data"
     
+    # Read primary key
+    pk_column=$(head -n 1 "$meta_file" | cut -d: -f2)
+    
     # Read column names and types
     col_names=()
     col_types=()
     
     while IFS=: read -r col_name col_type; do
-        if [[ "$col_name" != "PK" ]] && [[ "$col_name" != "VERSION" ]]; then
+        if [[ "$col_name" != "PK" ]]; then
             col_names+=("$col_name")
             col_types+=("$col_type")
-        elif [[ "$col_name" == "PK" ]]; then
-            pk_column="$col_type"
         fi
     done < "$meta_file"
     
@@ -60,7 +61,7 @@ insert_into_table() {
                         done < "$data_file"
                         
                         if [[ "$duplicate" == true ]]; then
-                            echo "Error: Primary key value '$value' already exists."
+                            print_error "Error: Primary key value '$value' already exists."
                             continue
                         fi
                     fi
@@ -69,7 +70,7 @@ insert_into_table() {
                 values+=("$value")
                 break
             else
-                echo "Error: Invalid value for type ${col_types[$i]}."
+                print_error "Error: Invalid value for type ${col_types[$i]}."
             fi
         done
     done
@@ -79,6 +80,6 @@ insert_into_table() {
     echo "$row" >> "$data_file"
     
     echo ""
-    echo "Success: Row inserted successfully."
+    print_success "Success: Row inserted successfully."
     pause
 }

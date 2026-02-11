@@ -11,7 +11,7 @@ update_table() {
     
     # Check if table exists
     if ! table_exists "$db_name" "$table_name"; then
-        echo "Error: Table '$table_name' does not exist."
+        print_error "Error: Table '$table_name' does not exist."
         pause
         return
     fi
@@ -27,16 +27,14 @@ update_table() {
     col_names=()
     col_types=()
     pk_index=0
-    index=0
     
     while IFS=: read -r col_name col_type; do
         if [[ "$col_name" != "PK" ]]; then
             col_names+=("$col_name")
             col_types+=("$col_type")
             if [[ "$col_name" == "$pk_column" ]]; then
-                pk_index=$index
+                pk_index=${#col_names[@]}-1
             fi
-            ((index++))
         fi
     done < "$meta_file"
     
@@ -44,7 +42,7 @@ update_table() {
     
     # Check if file exists and has data
     if [[ ! -f "$data_file" ]] || [[ ! -s "$data_file" ]]; then
-        echo "Error: No data in table."
+        print_error "Error: No data in table."
         pause
         return
     fi
@@ -62,17 +60,17 @@ update_table() {
     done < "$data_file"
     
     if [[ "$found" == false ]]; then
-        echo "Error: No row found with $pk_column = $pk_value."
+        print_error "Error: No row found with $pk_column = $pk_value."
         pause
         return
     fi
     
     # Show available columns (except primary key)
     echo ""
-    echo "Available columns to update:"
+    print_info "Available columns to update:"
     for ((i=0; i<${#col_names[@]}; i++)); do
         if [[ "$i" != "$pk_index" ]]; then
-            echo "  - ${col_names[$i]} (${col_types[$i]})"
+            print_info "  - ${col_names[$i]} (${col_types[$i]})"
         fi
     done
     
@@ -88,14 +86,14 @@ update_table() {
     done
     
     if [[ "$update_index" == -1 ]]; then
-        echo "Error: Column '$update_col' not found."
+        print_error "Error: Column '$update_col' not found."
         pause
         return
     fi
     
     # Don't allow updating primary key
     if [[ "$update_index" == "$pk_index" ]]; then
-        echo "Error: Cannot update primary key column."
+        print_error "Error: Cannot update primary key column."
         pause
         return
     fi
@@ -107,7 +105,7 @@ update_table() {
         if validate_value "$new_value" "${col_types[$update_index]}"; then
             break
         else
-            echo "Error: Invalid value for type ${col_types[$update_index]}."
+            print_error "Error: Invalid value for type ${col_types[$update_index]}."
         fi
     done
     
@@ -124,6 +122,6 @@ update_table() {
     mv "$temp_file" "$data_file"
     
     echo ""
-    echo "Success: Row updated successfully."
+    print_success "Success: Row updated successfully."
     pause
 }

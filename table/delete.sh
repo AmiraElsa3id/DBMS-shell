@@ -11,7 +11,7 @@ delete_from_table() {
     
     # Check if table exists
     if ! table_exists "$db_name" "$table_name"; then
-        echo "Error: Table '$table_name' does not exist."
+        print_error "Error: Table '$table_name' does not exist."
         pause
         return
     fi
@@ -26,15 +26,13 @@ delete_from_table() {
     # Find primary key column index
     col_names=()
     pk_index=0
-    index=0
     
     while IFS=: read -r col_name col_type; do
         if [[ "$col_name" != "PK" ]]; then
             col_names+=("$col_name")
             if [[ "$col_name" == "$pk_column" ]]; then
-                pk_index=$index
+                pk_index=${#col_names[@]}-1
             fi
-            ((index++))
         fi
     done < "$meta_file"
     
@@ -42,7 +40,7 @@ delete_from_table() {
     
     # Check if file exists and has data
     if [[ ! -f "$data_file" ]] || [[ ! -s "$data_file" ]]; then
-        echo "Error: No data in table."
+        print_error "Error: No data in table."
         pause
         return
     fi
@@ -53,19 +51,19 @@ delete_from_table() {
     
     # Copy all rows except the one to delete
     while IFS="$FIELD_SEPARATOR" read -r -a row; do
-        if [[ "${row[$pk_index]}" != "$pk_value" ]]; then
-            echo "${row[*]}" | tr ' ' "$FIELD_SEPARATOR" >> "$temp_file"
-        else
+        if [[ "${row[$pk_index]}" == "$pk_value" ]]; then
             found=true
+        else
+            echo "${row[*]}" | tr ' ' "$FIELD_SEPARATOR" >> "$temp_file"
         fi
     done < "$data_file"
     
     if [[ "$found" == true ]]; then
         mv "$temp_file" "$data_file"
-        echo "Success: Row deleted successfully."
+        print_success "Success: Row deleted successfully."
     else
         rm -f "$temp_file"
-        echo "Error: No row found with $pk_column = $pk_value."
+        print_error "Error: No row found with $pk_column = $pk_value."
     fi
     
     pause
